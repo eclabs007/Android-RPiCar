@@ -15,7 +15,7 @@ GPIO_LFT=3
 GPIO_RGT=2
 GPIO_LED =25
 FREQ=100
-speed=0
+speed=43
 #set GPIO direction (IN / OUT)
 GPIO.setup(GPIO_TRIGGER, GPIO.OUT)
 GPIO.setup(GPIO_FWD, GPIO.OUT)
@@ -30,6 +30,7 @@ GPIO.setup(GPIO_ECHO, GPIO.IN)
 GPIO.output(GPIO_LED, False)
 GPIO.output(GPIO_BKWD, False)
 #GPIO.output(GPIO_FWD, False)
+HEAD_LAMP=False
 pwm0.start(0)
 is_fwd=0
 safe_distance=True
@@ -38,16 +39,14 @@ def stop():
     #GPIO.output(GPIO_FWD, False)
     GPIO.output(GPIO_LFT, False)
     GPIO.output(GPIO_RGT, False)
-    GPIO.output(GPIO_LED, False)
     pwm0.ChangeDutyCycle(0)
-def fwd(duty):
+def fwd():
     is_fwd=1
     if safe_distance == False:
         return
 #    GPIO.output(GPIO_BKWD, False)
 #    GPIO.output(GPIO_FWD, True)
-    pwm0.ChangeDutyCycle(duty)
-    GPIO.output(GPIO_LED, True)
+    pwm0.ChangeDutyCycle(speed)
     time.sleep(0.2)
     stop()
 
@@ -115,10 +114,9 @@ if __name__ == '__main__':
             if i :
 
                 cmd, addr = sock.recvfrom(1024) # buffer size is 1024 bytes
-  #              cmd=sys.stdin.readline().strip()
                 print "cmd ",cmd
                 if cmd == 'f':
-                    fwd(100)
+                    fwd()
                 elif cmd == 'b':
                     bkwd()
                 elif cmd == 'r':
@@ -129,24 +127,21 @@ if __name__ == '__main__':
                     stop()
                 elif cmd== '1':
                     speed=35
-                    fwd(speed)
                 elif cmd== '2':
                     speed=55
-                    fwd(speed)
                 elif cmd== '3':
                     speed=70
-                    fwd(speed)
                 elif cmd== '4':
                     speed=85
-                    fwd(speed)
+                elif cmd== 'H':
+                    HEAD_LAMP=~HEAD_LAMP;
+                    GPIO.output(GPIO_LED, HEAD_LAMP)
 
-                cmd=0
             print("Speed= "+str(speed))
-            dist = distance()
+            dist =distance()
             if dist<70 or  dist > 400:
                safe_distance=False;
                stop()
-               GPIO.output(GPIO_LED, False)
                if is_fwd == 1 :
                   bkwd()
                   is_fwd=0
@@ -156,7 +151,6 @@ if __name__ == '__main__':
                 safe_distance=True;
                
             print ("Measured Distance = %.1f cm" % dist)
-          #  time.sleep(0.1)
  	    
         # Reset by pressing CTRL + C
     except KeyboardInterrupt:
